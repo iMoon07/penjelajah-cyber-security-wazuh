@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>CheatSheet Wazuh</title>
+  <style>
+    body { font-family: monospace; color: #000; background: #fff; margin: 0; padding: 20px; }
+    h1, h2, h3, h4 { margin: 1em 0 0.5em; }
+    h1::before { content: "🚀 "; }
+    h2::before { content: "⚙️ "; }
+    h3::before { content: "🛠️ "; }
+    h4::before { content: "🐞 "; }
+    pre { background: #f4f4f4; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+    th, td { border: 1px solid #bbb; padding: 6px; text-align: left; }
+    th { background: #eee; }
+    ul { margin: 0 0 1em 1.5em; }
+    code { background: #f4f4f4; padding: 2px 4px; border-radius: 3px; }
+    .tree { font-family: monospace; white-space: pre; background: #f9f9f9; padding: 10px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>CheatSheet Wazuh 2025 by Penjelajah CyberSecurity</h1>
+
+  <h2>1. Struktur Direktori & File Utama</h2>
+
+<h3>Wazuh Dashboard</h3>
+<pre class="tree">
+# File konfigurasi dan sertifikat untuk dashboard berbasis Opensearch
+/etc/wazuh-dashboard/
+├── certs/                           # Sertifikat HTTPS Dashboard
+│   ├── dashboard-key.pem            # Private key Dashboard
+│   ├── dashboard.pem                # Sertifikat publik Dashboard
+│   └── root-ca.pem                  # Sertifikat CA root yang dipercaya
+├── node.options                     # Opsi runtime untuk dashboard
+├── opensearch_dashboards.keystore  # Penyimpanan secrets/dashboard credentials
+└── opensearch_dashboards.yml       # File konfigurasi utama dashboard
+</pre>
+
+<h3>Wazuh Indexer</h3>
+<pre class="tree">
+# Komponen indexing berbasis OpenSearch (backend pencarian dan storage)
+/etc/wazuh-indexer/
+├── certs/                           # Sertifikat TLS untuk komunikasi aman
+│   ├── admin-key.pem                # Private key untuk user admin
+│   ├── admin.pem                    # Sertifikat publik untuk user admin
+│   ├── node-1-key.pem               # Private key node indexing
+│   ├── node-1.pem                   # Sertifikat publik node indexing
+│   └── root-ca.pem                  # Sertifikat root authority
+├── internalusers-backup/           # Backup untuk user internal
+├── jvm.options                     # Opsi konfigurasi JVM untuk indexing
+├── jvm.options.d/                  # Direktori konfigurasi JVM tambahan
+├── log4j2.properties               # Konfigurasi logging menggunakan Log4j2
+├── opensearch.keystore             # Secrets indexing (key, token)
+├── opensearch-notifications/       # Konfigurasi notifikasi Wazuh Indexer
+├── opensearch-security/            # Pengaturan keamanan (role, user, access)
+└── opensearch.yml                  # File konfigurasi utama Indexer
+</pre>
+
+<h3>Wazuh Manager</h3>
+<pre class="tree">
+# Komponen utama monitoring, deteksi dan orkestrasi Wazuh
+/var/ossec/
+├── active-response/                # Skrip otomatis untuk respons ancaman
+├── agentless/                      # Folder konfigurasi agentless monitoring
+├── api/                            # Endpoint RESTful API
+├── backup/                         # Penyimpanan file backup konfigurasi
+├── bin/                            # Eksekusi CLI binary seperti wazuh-control
+├── etc/                            # File konfigurasi utama Wazuh Manager
+├── framework/                      # Framework internal python library
+├── integrations/                   # Modul integrasi eksternal (Slack, VirusTotal)
+├── lib/                            # Shared libraries (dependency Wazuh)
+├── logs/                           # Output log service & komponen Wazuh
+├── queue/                          # Database runtime (alerts, FIM, agent stats)
+├── ruleset/                        # Aturan default (rules detection)
+├── stats/                          # Statistik performa & agent
+├── templates/                      # Template file response/alert
+├── tmp/                            # File sementara (temporary)
+└── wodles/                         # Plugin khusus integrasi cloud (AWS, GCP, Azure)
+</pre>
+
+  <h2>2. Penjelasan Fungsi Utama</h2>
+  <ul>
+    <li><b>etc/</b>: Konfigurasi utama (ossec.conf, decoders, rules, shared)</li>
+    <li><b>bin/</b>: CLI tools (wazuh-control, agent_control, manage_agents)</li>
+    <li><b>logs/</b>: Log layanan, alert, archives, API, cluster</li>
+    <li><b>queue/</b>: IPC & database internal (alerts, FIM, syscollector, vd)</li>
+    <li><b>active-response/</b>: Skrip & binary untuk respons otomatis</li>
+    <li><b>wodles/</b>: Integrasi cloud (AWS, Azure, GCP)</li>
+  </ul>
+
+  <h2>3. Kontrol Layanan & Operasi Dasar</h2>
+  <pre>
+# systemd – start/stop/restart/status/enable
+sudo systemctl {start|stop|restart|status|enable} wazuh-manager
+sudo systemctl {start|stop|restart|status|enable} wazuh-agent
+sudo systemctl {start|stop|restart|status|enable} wazuh-indexer
+sudo systemctl {start|stop|restart|status|enable} wazuh-dashboard
+
+# Diagnostik cepat tanpa systemd
+/var/ossec/bin/wazuh-control {start|stop|restart|status|info}
+  </pre>
+
+  <h2>4. Manajemen Agen & Otentikasi</h2>
+  <pre>
+# Menu interaktif (Manager)
+sudo /var/ossec/bin/manage_agents   # A=add, E=extract, L=list, R=remove
+
+# Daftarkan agen dari endpoint
+sudo /var/ossec/bin/agent-auth -m <IP_MANAGER> -A <AGENT_NAME>
+
+# Kontrol agen
+sudo /var/ossec/bin/agent_control -l        # list
+sudo /var/ossec/bin/agent_control -i <ID>   # detail
+sudo /var/ossec/bin/agent_control -R <ID>   # restart
+  </pre>
+
+  <h2>5. Monitoring & Log Analysis</h2>
+  <pre>
+# Real-time alerts
+sudo tail -f /var/ossec/logs/alerts/alerts.log
+
+# Log manager & API
+sudo tail -f /var/ossec/logs/ossec.log
+sudo tail -f /var/ossec/logs/api.log
+
+# Cek queue usage
+sudo /var/ossec/bin/wazuh-queues-usage
+  </pre>
+
+  <h2>6. File Integrity Monitoring (FIM)</h2>
+  <pre>
+# Lihat perubahan file
+sudo sqlite3 /var/ossec/queue/fim/db/<AGENT_ID>.db \
+  "SELECT * FROM fim_entry ORDER BY timestamp DESC LIMIT 5;"
+
+# Manual rescan
+sudo /var/ossec/bin/agent_control -a -u <AGENT_ID>
+
+# Clear database
+sudo /var/ossec/bin/wazuh-db <AGENT_ID> fim delete_range 0 999999999
+  </pre>
+
+  <h2>7. Vulnerability Detection</h2>
+  <pre>
+# Update CVE feed
+sudo /var/ossec/bin/wazuh-db <AGENT_ID> vuln_cves update
+
+# Cek status scan
+sudo /var/ossec/bin/agent_control -i <AGENT_ID> | grep -i vuln
+
+# Lihat laporan
+ls -la /var/ossec/queue/vd/reports/
+  </pre>
+
+  <h2>8. Konfigurasi & Validasi</h2>
+  <pre>
+# Validasi dashboard
+sudo -u wazuh-dashboard \
+  /usr/share/opensearch-dashboards/bin/opensearch-dashboards \
+  --config /etc/wazuh-dashboard/opensearch_dashboards.yml --quiet
+
+# Validasi indexer
+sudo -u wazuh-indexer \
+  /usr/share/opensearch/bin/opensearch \
+  --config /etc/wazuh-indexer/opensearch.yml --quiet
+
+# Test rules
+sudo /var/ossec/bin/ossec-testrule
+  </pre>
+
+  <h2>9. Troubleshooting Harian</h2>
+  <h4>Agent Disconnected</h4>
+  <pre>
+sudo /var/ossec/bin/agent_control -l | grep Disconnected
+for id in $(sudo /var/ossec/bin/agent_control -l | grep Disconnected | awk '{print $2}'); do
+  sudo /var/ossec/bin/agent_control -R $id
+done
+  </pre>
+  <h4>API Connectivity</h4>
+  <pre>
+curl -k -u wazuh:wazuh https://localhost:55000/
+sudo tail -f /var/ossec/logs/api.log
+sudo systemctl restart wazuh-api
+  </pre>
+  <h4>Database Corruption</h4>
+  <pre>
+sudo systemctl stop wazuh-manager
+sudo rm /var/ossec/queue/db/*.db-wal /var/ossec/queue/db/*.db-shm
+sudo systemctl start wazuh-manager
+  </pre>
+  <h4>Dashboard/Indexer Errors</h4>
+  <pre>
+sudo journalctl -u wazuh-dashboard | grep -i "error\|warn"
+sudo systemctl restart wazuh-dashboard
+sudo cat /var/log/wazuh-indexer/wazuh-cluster.log | grep -i "error\|warn"
+  </pre>
+  <h4>Log Rotation & Cleanup</h4>
+  <pre>
+sudo /var/ossec/bin/ossec-logrotate
+find /var/ossec/logs/archives/ -mtime +30 -delete
+find /var/ossec/logs/alerts/   -mtime +30 -delete
+find /var/ossec/logs/ -name "*.log" -size +100M -exec gzip {} \;
+  </pre>
+
+  <h2>10. Cheatsheet File & Path Penting</h2>
+  <table>
+    <tr><th>File</th><th>Path</th><th>Fungsi</th></tr>
+    <tr><td>ossec.conf</td><td>/var/ossec/etc/ossec.conf</td><td>Konfigurasi utama manager</td></tr>
+    <tr><td>local_rules.xml</td><td>/var/ossec/etc/rules/local_rules.xml</td><td>Rules kustom</td></tr>
+    <tr><td>local_decoder.xml</td><td>/var/ossec/etc/decoders/local_decoder.xml</td><td>Decoder kustom</td></tr>
+    <tr><td>client.keys</td><td>/var/ossec/etc/client.keys</td><td>Kunci autentikasi agent</td></tr>
+    <tr><td>alerts.log</td><td>/var/ossec/logs/alerts/alerts.log</td><td>Log alert</td></tr>
+    <tr><td>api.log</td><td>/var/ossec/logs/api.log</td><td>Log API</td></tr>
+  </table>
+
+<section id="best-practices">
+  <h2>11. Best Practice</h2>
+
+  <article>
+    <h4>Perencanaan & Arsitektur</h4>
+    <pre>
+# Identifikasi sistem dan aset kritikal yang perlu dimonitor
+# Rancang arsitektur: single server, cluster, atau multi-cloud sesuai kebutuhan
+# Dokumentasikan scope, integrasi SIEM, dan kebutuhan resource
+    </pre>
+  </article>
+
+  <article>
+    <h4>Backup & Versioning Konfigurasi</h4>
+    <pre>
+# Backup konfigurasi sebelum perubahan
+sudo cp /var/ossec/etc/ossec.conf /var/ossec/etc/ossec.conf.bak
+# Automasi backup harian via cron
+0 2 * * * tar czf /backup/wazuh-$(date +%F).tar.gz /var/ossec/etc/ /var/ossec/ruleset/ /var/ossec/api/configuration/
+# Gunakan git untuk versioning konfigurasi
+cd /var/ossec/etc/
+git init
+git add .
+git commit -m "Backup konfigurasi awal"
+    </pre>
+  </article>
+
+  <article>
+    <h4>Pengelolaan & Dokumentasi Konfigurasi</h4>
+    <pre>
+# Tambahkan komentar pada setiap perubahan di file konfigurasi
+# Uji perubahan di staging/non-production sebelum ke production
+/var/ossec/bin/ossec-testrule
+# Restart service setelah perubahan
+sudo systemctl restart wazuh-manager wazuh-agent
+    </pre>
+  </article>
+
+  <article>
+    <h4>Resource & Performance</h4>
+    <pre>
+# Pastikan resource (CPU, RAM, disk) cukup, terutama untuk deployment besar
+df -h /var/ossec/
+top
+free -m
+# Pantau queue usage dan alert jika penuh
+/var/ossec/bin/wazuh-queues-usage
+    </pre>
+  </article>
+
+  <article>
+    <h4>Monitoring & Pemantauan Log</h4>
+    <pre>
+systemctl status wazuh-manager wazuh-agent
+tail -f /var/ossec/logs/ossec.log
+tail -f /var/ossec/logs/alerts/alerts.log
+journalctl -u wazuh-manager -xe
+journalctl -u wazuh-agent -xe
+    </pre>
+  </article>
+
+  <article>
+    <h4>Keamanan & Hardening</h4>
+    <pre>
+# Buka port hanya untuk IP terpercaya (firewall)
+sudo ufw allow from &lt;IP_TRUSTED&gt; to any port 1514,1515,55000,9200,5601 proto tcp
+# Ganti password default semua user Wazuh, dashboard, indexer
+# Aktifkan TLS/SSL untuk semua komunikasi agent-server dan dashboard
+# Audit user & role secara berkala
+cat /etc/wazuh-indexer/opensearch-security/internal_users.yml
+cat /etc/wazuh-indexer/opensearch-security/roles.yml
+# Set umask yang aman
+umask 027
+    </pre>
+  </article>
+
+  <article>
+    <h4>Manajemen Rules & Alert</h4>
+    <pre>
+# Simpan custom rules/decoders di local_*
+# Validasi rule sebelum deploy
+/var/ossec/bin/ossec-testrule
+# Gunakan grep untuk filter alert penting
+grep "Level: 12" /var/ossec/logs/alerts/alerts.log
+    </pre>
+  </article>
+
+  <article>
+    <h4>File Integrity Monitoring (FIM) & Compliance</h4>
+    <pre>
+# Aktifkan modul SCA dan compliance di ossec.conf
+# Cek hasil FIM dan compliance di dashboard atau via log
+tail -f /var/ossec/logs/alerts/alerts.log | grep -i compliance
+    </pre>
+  </article>
+
+  <article>
+    <h4>Vulnerability Detection & Patch Management</h4>
+    <pre>
+# Update feed CVE dan scan vulnerability minimal sebulan sekali
+/var/ossec/bin/wazuh-db AGENT_ID vuln_cves update
+/var/ossec/bin/agent_control -i AGENT_ID | grep -i vuln
+# Reset modul jika error (lihat troubleshooting vulnerability Wazuh)
+sudo systemctl stop wazuh-manager
+sudo rm -rf /var/ossec/queue/vd/inventory/
+sudo rm -rf /var/ossec/queue/vd/delayed/
+sudo rm -rf /var/ossec/queue/vd/event/
+sudo rm -rf /var/ossec/queue/indexer/
+sudo systemctl start wazuh-manager
+sudo systemctl restart wazuh-manager
+    </pre>
+  </article>
+
+  <article>
+    <h4>Log Rotation & Disk Space</h4>
+    <pre>
+/var/ossec/bin/ossec-logrotate
+find /var/ossec/logs/archives/ -type f -mtime +30 -delete
+find /var/ossec/logs/alerts/ -type f -mtime +30 -delete
+    </pre>
+  </article>
+
+  <article>
+    <h4>Multi-Cloud & Integrasi</h4>
+    <pre>
+# Deploy agent di semua cloud/environments, gunakan agentless jika perlu
+# Integrasikan native security (AWS GuardDuty, Azure Security Center, GCP SCC)
+# Gunakan dashboard terpusat untuk visibilitas multi-cloud
+# Pisahkan konfigurasi wodles cloud di direktori berbeda
+    </pre>
+  </article>
+
+  <article>
+    <h4>Audit & IT Hygiene</h4>
+    <pre>
+# Jalankan inventory asset Wazuh untuk OS, software, port, network
+# Cek hasil inventory di dashboard
+# Audit permission file penting secara berkala
+ls -l /var/ossec/etc/
+ls -l /var/ossec/logs/
+ls -l /var/ossec/queue/
+    </pre>
+  </article>
+
+  <article>
+    <h4>Automasi Health Check & Maintenance</h4>
+    <pre>
+#!/bin/bash
+systemctl status wazuh-manager wazuh-agent
+df -h /var/ossec/
+tail -n 20 /var/ossec/logs/ossec.log
+/var/ossec/bin/agent_control -l
+    </pre>
+  </article>
+
+  <article>
+    <h4>Incident Response & Dokumentasi</h4>
+    <pre>
+# Dokumentasikan setiap perubahan konfigurasi dan response insiden di repo/git
+# Terapkan SOP response alert kritikal sesuai kebutuhan organisasi
+    </pre>
+  </article>
+
+  <article>
+    <h4>Update & Patch Management</h4>
+    <pre>
+sudo apt update &amp;&amp; sudo apt upgrade wazuh-manager wazuh-agent wazuh-indexer wazuh-dashboard
+    </pre>
+  </article>
+
+  <article>
+    <h4>Tips Lainnya</h4>
+    <pre>
+# Gunakan hostname unik untuk tiap agent
+# Lakukan test konfigurasi di staging sebelum ke production
+# Gunakan RBAC (Role-Based Access Control) pada dashboard dan API
+# Integrasi SIEM eksternal jika dibutuhkan (Splunk, Elastic, Grafana, dsb.)
+# Lakukan audit compliance (PCI-DSS, HIPAA, NIST, CIS) secara berkala
+    </pre>
+  </article>
+
+  <pre style="text-align:center; border:none; background:transparent; margin-top:40px; font-family:monospace;">
+ Copyright ❤️ By Penjelajah CyberSecurity
+</pre>
+</body>
+</html>
+
+</section>
+
