@@ -1,6 +1,6 @@
 #!/var/ossec/framework/python/bin/python3
 """
-Wazuh -> Discord integration (DEWA v2) with GeoIP (ip-api.com)
+Wazuh -> Discord integration (Penjelajah CyberSecurity v2) with GeoIP (ip-api.com)
 Usage:
   /var/ossec/framework/python/bin/python3 wazuh_discord_dewa_v2_geo.py <alert_file> <server_url> <discord_webhook_url>
 Notes:
